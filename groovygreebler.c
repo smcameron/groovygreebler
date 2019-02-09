@@ -260,6 +260,48 @@ static void add_random_rectangles(unsigned char *heightmap, int dim, int count)
 		add_random_rectangle(heightmap, dim);
 }
 
+static void add_circle(unsigned char *heightmap, int dim, int x, int y, int radius)
+{
+	int i, j;
+	int lox, hix, loy, hiy;
+	int in_or_out = 2 * (rand() % 2) - 1;
+	float d, dx, dy;
+
+	lox = x - radius;
+	hix = x + radius;
+	loy = y - radius;
+	hiy = y + radius;
+
+	for (i = lox + 1; i < hix - 1; i++) {
+		dx = x - i;
+		for (j = loy + 1; j < hiy - 1; j++) {
+			dy = y - j;
+			d = dy * dy + dx * dx;
+			if (d < radius * radius)	
+				set_height(heightmap, i, j, in_or_out * 20, dim);
+		}
+	}
+}
+
+static void add_random_circle(unsigned char *heightmap, int dim)
+{
+	int x, y, radius;
+
+	x = rand() % dim;
+	y = rand() % dim;
+	radius = rand() % 50 + 20;
+
+	add_circle(heightmap, dim, x, y, radius);
+}
+
+static void add_random_circles(unsigned char *heightmap, int dim, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		add_random_circle(heightmap, dim);
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned char *heightmap, *hmap_img, *normal_img;
@@ -274,6 +316,7 @@ int main(int argc, char *argv[])
 
 	add_random_grooves(heightmap, DIM, 100);
 	add_random_rectangles(heightmap, DIM, 100);
+	add_random_circles(heightmap, DIM, 100);
 
 	calculate_normalmap(heightmap, normalmap, DIM);
 
