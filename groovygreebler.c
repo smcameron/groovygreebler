@@ -213,6 +213,53 @@ static void add_random_grooves(unsigned char *heightmap, int dim, int count)
 		add_random_groove(heightmap, dim);
 }
 
+static void add_rectangle(unsigned char *heightmap, int dim, int x, int y, int width, int height)
+{
+	int i, j;
+	int lox, hix, loy, hiy;
+	int in_or_out = 2 * (rand() % 2) - 1;
+
+	lox = x - width / 2;
+	hix = x + width + 2;
+	loy = y - height / 2;
+	hiy = y + height / 2;
+
+	for (i = lox + 1; i < hix - 1; i++) {
+		for (j = loy + 1; j < hiy - 1; j++) {
+			set_height(heightmap, i, j, in_or_out * 20, dim);
+		}
+	}
+
+	for (i = lox; i < hix; i++) {
+		set_height(heightmap, i, loy, in_or_out * 5, dim);
+		set_height(heightmap, i, hiy, in_or_out * 5, dim);
+	}
+	for (i = loy; i < hiy; i++) {
+		set_height(heightmap, lox, i, in_or_out * 5, dim);
+		set_height(heightmap, hix, i, in_or_out * 5, dim);
+	}
+}
+
+static void add_random_rectangle(unsigned char *heightmap, int dim)
+{
+	int x, y, width, height;
+
+	x = rand() % dim;
+	y = rand() % dim;
+	width = rand() % 50 + 20;
+	height = rand() % 50 + 20;
+
+	add_rectangle(heightmap, dim, x, y, width, height);
+}
+
+static void add_random_rectangles(unsigned char *heightmap, int dim, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		add_random_rectangle(heightmap, dim);
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned char *heightmap, *hmap_img, *normal_img;
@@ -224,7 +271,9 @@ int main(int argc, char *argv[])
 	normal_img = allocate_output_image(DIM);
 
 	initialize_heightmap(heightmap, DIM, DIM);
+
 	add_random_grooves(heightmap, DIM, 100);
+	add_random_rectangles(heightmap, DIM, 100);
 
 	calculate_normalmap(heightmap, normalmap, DIM);
 
