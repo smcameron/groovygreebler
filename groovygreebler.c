@@ -37,9 +37,12 @@ const int yo[] = { 0, 1 };
 
 int max(int a, int b)
 {
-	if (a > b)
-		return a;
-	return b;
+	return (a > b ? a : b);
+}
+
+int min(int a, int b)
+{
+	return (a < b ? a : b);
 }
 
 struct primitive {
@@ -220,9 +223,9 @@ static void add_groove(unsigned char *heightmap, int dim, int x, int y, int len,
 	x -= (len / 2) * xo[dir];
 	y -= (len / 2) * yo[dir];
 	for (i = 0; i < len; i++) {
-		set_height(heightmap, x, y, in_or_out * 10, dim);
-		set_height(heightmap, x + yo[dir], y + xo[dir], in_or_out * 5, dim);
-		set_height(heightmap, x - yo[dir], y - xo[dir], in_or_out * 5, dim);
+		set_height(heightmap, x, y, in_or_out * 30, dim);
+		set_height(heightmap, x + yo[dir], y + xo[dir], in_or_out * 15, dim);
+		set_height(heightmap, x - yo[dir], y - xo[dir], in_or_out * 15, dim);
 		x += xo[dir];
 		y += yo[dir];
 	}
@@ -261,17 +264,17 @@ static void add_rectangle(unsigned char *heightmap, int dim, int x, int y, int w
 
 	for (i = lox + 1; i < hix - 1; i++) {
 		for (j = loy + 1; j < hiy - 1; j++) {
-			set_height(heightmap, i, j, in_or_out * 20, dim);
+			set_height(heightmap, i, j, in_or_out * 30, dim);
 		}
 	}
 
 	for (i = lox; i < hix; i++) {
-		set_height(heightmap, i, loy, in_or_out * 5, dim);
-		set_height(heightmap, i, hiy, in_or_out * 5, dim);
+		set_height(heightmap, i, loy, in_or_out * 15, dim);
+		set_height(heightmap, i, hiy, in_or_out * 15, dim);
 	}
 	for (i = loy; i < hiy; i++) {
-		set_height(heightmap, lox, i, in_or_out * 5, dim);
-		set_height(heightmap, hix, i, in_or_out * 5, dim);
+		set_height(heightmap, lox, i, in_or_out * 15, dim);
+		set_height(heightmap, hix, i, in_or_out * 15, dim);
 	}
 }
 
@@ -372,7 +375,7 @@ static void add_random_row_of_random_primitives(unsigned char *heightmap, int di
 	struct primitive p;
 
 	count = rand() % 7 + 3;
-	dir = rand() % 2; 
+	dir = rand() % 2;
 	p.type = rand() % 3;
 	p.x = rand() % dim;
 	p.y = rand() % dim;
@@ -380,7 +383,7 @@ static void add_random_row_of_random_primitives(unsigned char *heightmap, int di
 
 	switch (p.type) {
 	case CIRCLE:
-		p.p.circle.r = rand() % 35 + 5;	
+		p.p.circle.r = rand() % 35 + 5;
 		inc = p.p.circle.r * 2.3;
 		break;
 	case RECTANGLE:
@@ -391,7 +394,7 @@ static void add_random_row_of_random_primitives(unsigned char *heightmap, int di
 	case LINE:
 		p.p.line.len = rand() % (dim / 2);
 		p.p.line.dir = !dir;
-		inc = 5; 
+		inc = 5;
 		break;
 	default:
 		break;
@@ -407,6 +410,82 @@ static void add_random_rows(unsigned char *heightmap, int dim, int count)
 		add_random_row_of_random_primitives(heightmap, dim);
 }
 
+static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2)
+{
+	int dx, dy;
+	int count, dir, incx, incy;
+	struct primitive p;
+
+	dx = abs(x2 - x1) - 10;
+	dy = abs(y2 - y1) - 10;
+	dir = rand() % 2;
+	count = rand() % 10;
+	if (!count)
+		return;
+	incx = (xo[dir] * dx) / count;
+	incy = (yo[dir] * dy) / count;
+
+	p.in_or_out = 2 * (rand() % 2) - 1;
+	p.type = RECTANGLE;
+	p.x = x1 + dx * yo[dir] / 2 + incx * xo[dir] / 2 + 5;
+	p.y = y1 + dy * xo[dir] / 2 + incy * yo[dir] / 2 + 5;
+	p.p.rectangle.w = incx + yo[dir] * dx;
+	p.p.rectangle.h = incy + xo[dir] * dy;
+	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p);
+}
+
+static void populate_greebles(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2)
+{
+	int c;
+
+	c = 0;
+
+	switch (c) {
+	case 0:
+		populate_rects(heightmap, dim, x1, y1, x2, y2);
+		break;
+	default:
+		break;
+	}
+}
+
+static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2, int limit)
+{
+	int dx, dy, x, y, dir;
+
+	dx = abs(x2 - x1);
+	dy = abs(y2 - y1);
+	if (dx > dy) {
+		if (dx < limit || (dx < limit * 8 && (rand() % 5) == 0)) {
+			populate_greebles(heightmap, dim, x1, y1, x2, y2);
+			return;
+		}
+		x = min(x1, x2);
+		x += dx / 2;
+		x += rand() % (dx / 3) - (dx / 6);
+		y = min(y1, y2);
+		y += dy / 2;
+		dir = 1;
+		add_groove(heightmap, dim, x, y, dy, dir, 1);
+		greeble_area(heightmap, dim, x1, y1, x, y2, limit);
+		greeble_area(heightmap, dim, x, y1, x2, y2, limit);
+	} else {
+		if (dy < limit || (dy < limit * 8 && (rand() % 5) == 0)) {
+			populate_greebles(heightmap, dim, x1, y1, x2, y2);
+			return;
+		}
+		x = min(x1, x2);
+		x += dx / 2;
+		y = min(y1, y2);
+		y += dy / 2;
+		y += rand() % (dy / 3) - (dy / 6);
+		dir = 0;
+		add_groove(heightmap, dim, x, y, dx, dir, 1);
+		greeble_area(heightmap, dim, x1, y1, x2, y, limit);
+		greeble_area(heightmap, dim, x1, y, x2, y2, limit);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned char *heightmap, *hmap_img, *normal_img;
@@ -419,10 +498,12 @@ int main(int argc, char *argv[])
 
 	initialize_heightmap(heightmap, DIM, DIM);
 
-	add_random_grooves(heightmap, DIM, 100);
-	add_random_rectangles(heightmap, DIM, 20);
-	add_random_circles(heightmap, DIM, 0);
-	add_random_rows(heightmap, DIM, 150);
+	//add_random_grooves(heightmap, DIM, 100);
+	// add_random_rectangles(heightmap, DIM, 20);
+	// add_random_circles(heightmap, DIM, 0);
+	//add_random_rows(heightmap, DIM, 150);
+
+	greeble_area(heightmap, DIM, 0, 0, DIM - 1 , DIM - 1, 32);
 
 	calculate_normalmap(heightmap, normalmap, DIM);
 
@@ -432,6 +513,7 @@ int main(int argc, char *argv[])
 	write_image("heightmap.png", hmap_img, DIM);
 	write_image("normalmap.png", normal_img, DIM);
 
+	free(normal_img);
 	free(hmap_img);
 	free(normalmap);
 	free(heightmap);
