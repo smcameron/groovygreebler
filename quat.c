@@ -18,6 +18,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "mtwist.h"
 #include "quat.h"

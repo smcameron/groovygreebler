@@ -1,5 +1,5 @@
 
-MYCFLAGS=-g -Wall --pedantic -fsanitize=address
+MYCFLAGS=-g -std=gnu99 -Wall --pedantic -fsanitize=address
 
 PNGLIBS:=$(shell pkg-config --libs libpng)
 PNGCFLAGS:=$(shell pkg-config --cflags libpng)
