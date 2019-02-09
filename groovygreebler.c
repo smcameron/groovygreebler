@@ -164,6 +164,51 @@ static void write_image(const char *filename, unsigned char *img, int dim)
 		fprintf(stderr, "Failed to write file %s: %s\n", filename, strerror(errno));
 }
 
+static void set_height(unsigned char *heightmap, int x, int y, int h, int dim)
+{
+	int p, new_height;
+
+	if (x < 0 || x >= dim)
+		return;
+	if (y < 0 || y >= dim)
+		return;
+	p = x * dim + y;
+	new_height = (int) heightmap[p] + h;
+	if (new_height < 0)
+		new_height = 0;
+	else if (new_height > 255)
+		new_height = 255;
+	heightmap[p] = new_height;
+}
+
+static void add_random_groove(unsigned char *heightmap, int dim)
+{
+	const int xo[] = { 1, 0 };
+	const int yo[] = { 0, 1 };
+	int len, i, x, y, dir;
+
+	dir = rand() % 2;
+	x = rand() % dim;
+	y = rand() % dim;
+	len = rand() % (dim / 2);
+
+	for (i = 0; i < len; i++) {
+		set_height(heightmap, x, y, 10, dim);
+		set_height(heightmap, x + yo[dir], y + xo[dir], 5, dim);
+		set_height(heightmap, x - yo[dir], y - xo[dir], 5, dim);
+		x += xo[dir];
+		y += yo[dir];
+	}
+}
+
+static void add_random_grooves(unsigned char *heightmap, int dim, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		add_random_groove(heightmap, dim);
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned char *heightmap, *hmap_img, *normal_img;
@@ -175,6 +220,8 @@ int main(int argc, char *argv[])
 	normal_img = allocate_output_image(DIM);
 
 	initialize_heightmap(heightmap, DIM, DIM);
+	add_random_grooves(heightmap, DIM, 100);
+
 	calculate_normalmap(heightmap, normalmap, DIM);
 
 	paint_height_map(hmap_img, heightmap, DIM, 0, 255);
