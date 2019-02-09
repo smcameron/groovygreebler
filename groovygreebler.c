@@ -115,24 +115,22 @@ static unsigned char *allocate_output_image(int dim)
 
 static void paint_height_map(unsigned char *image, unsigned char *hmap, int dim, float min, float max)
 {
-	int f, i, j;
+	int i, j;
 	float r; 
 	unsigned char c;
 	int p, h;
 
-	for (f = 0; f < 6; f++) {
-		for (i = 0; i < dim; i++) {
-			for (j = 0; j < dim; j++) {
-				h = (j * dim + i);
-				p = h * 4;
-				r = hmap[h];
-				r = (r - min) / (max - min);
-				c = (unsigned char) (r * 255.0f);
-				image[p + 0] = c;
-				image[p + 1] = c;
-				image[p + 2] = c;
-				image[p + 3] = 255;
-			}
+	for (i = 0; i < dim; i++) {
+		for (j = 0; j < dim; j++) {
+			h = (j * dim + i);
+			p = h * 4;
+			r = hmap[h];
+			r = (r - min) / (max - min);
+			c = (unsigned char) (r * 255.0f);
+			image[p + 0] = c;
+			image[p + 1] = c;
+			image[p + 2] = c;
+			image[p + 3] = 255;
 		}
 	}
 }
