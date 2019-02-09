@@ -113,6 +113,26 @@ static unsigned char *allocate_output_image(int dim)
 	return x;
 }
 
+static void paint_normal_map(unsigned char *normal_image, union vec3 *normal_map, int dim)
+{
+	int i, j;
+	char red, green, blue;
+	int p;
+
+	for (i = 0; i < dim; i++) {
+		for (j = 0; j < dim; j++) {
+			p = (j * dim + i);
+			red = normal_map[p].v.x * 255;
+			green = normal_map[p].v.y * 255;
+			blue = normal_map[p].v.z * 255;
+			normal_image[4 * p + 0] = red;
+			normal_image[4 * p + 1] = green;
+			normal_image[4 * p + 2] = blue;
+			normal_image[4 * p + 3] = 255;
+		}
+	}
+}
+
 static void paint_height_map(unsigned char *image, unsigned char *hmap, int dim, float min, float max)
 {
 	int i, j;
@@ -146,19 +166,22 @@ static void write_image(const char *filename, unsigned char *img, int dim)
 
 int main(int argc, char *argv[])
 {
-	unsigned char *heightmap, *hmap_img;
+	unsigned char *heightmap, *hmap_img, *normal_img;
 	union vec3 *normalmap;
 
 	heightmap = allocate_heightmap(DIM);
 	normalmap = allocate_normalmap(DIM);
 	hmap_img = allocate_output_image(DIM);
+	normal_img = allocate_output_image(DIM);
 
 	initialize_heightmap(heightmap, DIM, DIM);
 	calculate_normalmap(heightmap, normalmap, DIM);
 
 	paint_height_map(hmap_img, heightmap, DIM, 0, 255);
+	paint_normal_map(normal_img, normalmap, DIM);
 
 	write_image("heightmap.png", hmap_img, DIM);
+	write_image("normalmap.png", normal_img, DIM);
 
 	free(hmap_img);
 	free(normalmap);
