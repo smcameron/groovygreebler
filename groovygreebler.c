@@ -194,6 +194,8 @@ static void add_random_groove(unsigned char *heightmap, int dim)
 	len = rand() % (dim / 2);
 	groove_or_bump = 2 * (rand() % 2) - 1;
 
+	x = x - len / 2;
+	y = y - len / 2;
 	for (i = 0; i < len; i++) {
 		set_height(heightmap, x, y, groove_or_bump * 10, dim);
 		set_height(heightmap, x + yo[dir], y + xo[dir], groove_or_bump * 5, dim);
