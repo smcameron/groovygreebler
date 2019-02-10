@@ -416,7 +416,8 @@ static void add_random_rows(unsigned char *heightmap, int dim, int count)
 		add_random_row_of_random_primitives(heightmap, dim);
 }
 
-static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2)
+static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2,
+				__attribute__((unused)) int limit)
 {
 	int dx, dy;
 	int count, dir, incx, incy;
@@ -440,7 +441,7 @@ static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, in
 	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p);
 }
 
-static void populate_greebles(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2)
+static void populate_greebles(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2, int limit)
 {
 	int c;
 
@@ -448,7 +449,7 @@ static void populate_greebles(unsigned char *heightmap, int dim, int x1, int y1,
 
 	switch (c) {
 	case 0:
-		populate_rects(heightmap, dim, x1, y1, x2, y2);
+		populate_rects(heightmap, dim, x1, y1, x2, y2, limit);
 		break;
 	default:
 		break;
@@ -463,7 +464,7 @@ static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int 
 	dy = abs(y2 - y1);
 	if (dx > dy) {
 		if (dx < limit || (dx < limit * 8 && (rand() % 5) == 0)) {
-			populate_greebles(heightmap, dim, x1, y1, x2, y2);
+			populate_greebles(heightmap, dim, x1, y1, x2, y2, limit);
 			return;
 		}
 		x = min(x1, x2);
@@ -477,7 +478,7 @@ static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int 
 		greeble_area(heightmap, dim, x, y1, x2, y2, limit);
 	} else {
 		if (dy < limit || (dy < limit * 8 && (rand() % 5) == 0)) {
-			populate_greebles(heightmap, dim, x1, y1, x2, y2);
+			populate_greebles(heightmap, dim, x1, y1, x2, y2, limit);
 			return;
 		}
 		x = min(x1, x2);
