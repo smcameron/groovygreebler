@@ -255,7 +255,7 @@ static void add_rectangle(unsigned char *heightmap, int dim, int x, int y, int w
 	int lox, hix, loy, hiy;
 
 	lox = x - width / 2;
-	hix = x + width + 2;
+	hix = x + width / 2;
 	loy = y - height / 2;
 	hiy = y + height / 2;
 
