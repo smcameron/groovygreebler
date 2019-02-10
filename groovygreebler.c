@@ -23,15 +23,18 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "quat.h"
 #include "png_utils.h"
+#include "bline.h"
 
 #define DIM 1024
 
 #define LINE 0
 #define RECTANGLE 1
 #define CIRCLE 2
+#define ANNULUS_SECTOR 3
 
 const int xo[] = { 1, 0 };
 const int yo[] = { 0, 1 };
@@ -57,7 +60,10 @@ struct primitive {
 		struct {
 			int len, dir;
 		} line;
-
+		struct {
+			int inner_r, outer_r;
+			float a1, a2;
+		} annulus_sector;
 	} p;
 	int type;
 	int in_or_out;
@@ -328,6 +334,44 @@ static void add_circle(unsigned char *heightmap, int dim, int x, int y, int radi
 	}
 }
 
+struct bline_context {
+	unsigned char *heightmap;
+	int dim;
+	int in_or_out;
+};
+
+static void plot_point(int x, int y, void *context)
+{
+	struct bline_context *c = context;
+
+	set_height(c->heightmap, x, y, c->in_or_out * 20, c->dim);
+}
+
+static void add_annulus_sector(unsigned char *heightmap, int dim, int x, int y,
+				float a1, float a2, int r1, int r2, int in_or_out, int limit)
+{
+	struct bline_context c;
+	int x1, y1, x2, y2, x3, y3, x4, y4;
+
+	c.heightmap = heightmap;
+	c.dim = dim;
+	c.in_or_out = in_or_out;
+
+	x1 = x + cos(a1) * r1;
+	y1 = y - sin(a1) * r1;
+	x2 = x + cos(a1) * r2;
+	y2 = y - sin(a1) * r2;
+	x3 = x + cos(a2) * r1;
+	y3 = y - sin(a2) * r1;
+	x4 = x + cos(a2) * r2;
+	y4 = y - sin(a2) * r2;
+
+	bline(x1, y1, x2, y2, plot_point, &c);
+	bline(x2, y2, x4, y4, plot_point, &c);
+	bline(x4, y4, x3, y3, plot_point, &c);
+	bline(x3, y3, x1, y1, plot_point, &c);
+}
+
 static void add_random_circle(unsigned char *heightmap, int dim)
 {
 	int x, y, radius;
@@ -348,7 +392,29 @@ static void add_random_circles(unsigned char *heightmap, int dim, int count)
 		add_random_circle(heightmap, dim);
 }
 
-static void add_primitive(unsigned char *heightmap, int dim, struct primitive *p)
+static void subdivide_circle(unsigned char *heightmap, int dim, int x, int y, int r, int in_or_out, int limit)
+{
+	float ainc, a2, a1 = 0;
+	int r1, r2;
+
+	r1 = r * (((float) (rand() % 50) + 30.0) / 100.0);
+	r2 = r;
+	a2 = a1;
+	do {
+		ainc = 2.0 * M_PI / ((rand() % 10) + 10);
+		a2 = a2 + ainc;
+		if (a2 > 2.0 * M_PI) {
+			a2 = 2.0 * M_PI;
+			break;
+		}
+		add_annulus_sector(heightmap, dim, x, y, a1, a2, r1, r2, in_or_out, limit);
+		a1 = a2;
+	} while (a1 < 2.0 * M_PI);
+	if (r1 * 2 > limit)
+		subdivide_circle(heightmap, dim, x, y, r1, in_or_out, limit);
+}
+
+static void add_primitive(unsigned char *heightmap, int dim, struct primitive *p, int limit)
 {
 	switch (p->type) {
 	case LINE:
@@ -359,24 +425,31 @@ static void add_primitive(unsigned char *heightmap, int dim, struct primitive *p
 		break;
 	case CIRCLE:
 		add_circle(heightmap, dim, p->x, p->y, p->p.circle.r, p->in_or_out);
+		if (p->p.circle.r * 2 > limit)
+			subdivide_circle(heightmap, dim, p->x, p->y, p->p.circle.r, p->in_or_out, limit);
+		break;
+	case ANNULUS_SECTOR:
+		add_annulus_sector(heightmap, dim, p->x, p->y,
+			p->p.annulus_sector.a1, p->p.annulus_sector.a2,
+			p->p.annulus_sector.inner_r, p->p.annulus_sector.outer_r, p->in_or_out, limit);
 		break;
 	default:
 		break;
 	}
 }
 
-static void add_row_of_primitives(unsigned char *heightmap, int dim, int dir, int count, int inc, struct primitive *p)
+static void add_row_of_primitives(unsigned char *heightmap, int dim, int dir, int count, int inc, struct primitive *p, int limit)
 {
 	int i;
 
 	for (i = 0; i < count; i++) {
-		add_primitive(heightmap, dim, p);
+		add_primitive(heightmap, dim, p, limit);
 		p->x += xo[dir] * inc;
 		p->y += yo[dir] * inc;
 	}
 }
 
-static void add_random_row_of_random_primitives(unsigned char *heightmap, int dim)
+static void add_random_row_of_random_primitives(unsigned char *heightmap, int dim, int limit)
 {
 	int dir, inc, count;
 	struct primitive p;
@@ -406,15 +479,15 @@ static void add_random_row_of_random_primitives(unsigned char *heightmap, int di
 	default:
 		break;
 	}
-	add_row_of_primitives(heightmap, dim, dir, count, inc, &p);
+	add_row_of_primitives(heightmap, dim, dir, count, inc, &p, limit);
 }
 
-static void add_random_rows(unsigned char *heightmap, int dim, int count)
+static void add_random_rows(unsigned char *heightmap, int dim, int count, int limit)
 {
 	int i;
 
 	for (i = 0; i < count; i++)
-		add_random_row_of_random_primitives(heightmap, dim);
+		add_random_row_of_random_primitives(heightmap, dim, limit);
 }
 
 static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2,
@@ -439,7 +512,7 @@ static void populate_rects(unsigned char *heightmap, int dim, int x1, int y1, in
 	p.y = y1 + dy * xo[dir] / 2 + incy * yo[dir] / 2 + 5;
 	p.p.rectangle.w = incx + yo[dir] * dx;
 	p.p.rectangle.h = incy + xo[dir] * dy;
-	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p);
+	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p, limit);
 }
 
 static void populate_circles(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2, int limit)
@@ -474,7 +547,7 @@ static void populate_circles(unsigned char *heightmap, int dim, int x1, int y1, 
 	p.x = x1 + dx * yo[dir] / 2 + incx * xo[dir] / 2;
 	p.y = y1 + dy * xo[dir] / 2 + incy * yo[dir] / 2;
 	p.p.circle.r = r;
-	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p);
+	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p, limit);
 	if (remainder > limit) {
 		x1 = x1 + incx * count * xo[dir];
 		y1 = y1 + incy * count * yo[dir];
@@ -560,7 +633,7 @@ int main(int argc, char *argv[])
 	//add_random_grooves(heightmap, DIM, 100);
 	// add_random_rectangles(heightmap, DIM, 20);
 	// add_random_circles(heightmap, DIM, 0);
-	//add_random_rows(heightmap, DIM, 150);
+	//add_random_rows(heightmap, DIM, 150, 32);
 
 	greeble_area(heightmap, DIM, 0, 0, DIM - 1 , DIM - 1, 32);
 
