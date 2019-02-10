@@ -204,7 +204,7 @@ static void set_height(unsigned char *heightmap, int x, int y, int h, int dim)
 		return;
 	if (y < 0 || y >= dim)
 		return;
-	p = x * dim + y;
+	p = y * dim + x;
 	new_height = (int) heightmap[p] + h;
 	if (new_height < 0)
 		new_height = 0;
