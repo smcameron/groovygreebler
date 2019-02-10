@@ -445,6 +445,7 @@ static void populate_circles(unsigned char *heightmap, int dim, int x1, int y1, 
 {
 	int dx, dy;
 	int count, dir, incx, incy, r;
+	int remainder;
 	struct primitive p;
 
 	dx = abs(x2 - x1);
@@ -455,10 +456,12 @@ static void populate_circles(unsigned char *heightmap, int dim, int x1, int y1, 
 
 	if (dx > dy) {
 		count = dx / dy;
+		remainder = dx % dy;
 		dir = 0;
 		r = 0.45 * dy;
 	} else {
 		count = dy / dx;
+		remainder = dy % dx;
 		dir = 1;
 		r = 0.45 * dx;
 	}
@@ -471,6 +474,11 @@ static void populate_circles(unsigned char *heightmap, int dim, int x1, int y1, 
 	p.y = y1 + dy * xo[dir] / 2 + incy * yo[dir] / 2;
 	p.p.circle.r = r;
 	add_row_of_primitives(heightmap, dim, dir, count, incx + incy, &p);
+	if (remainder > limit) {
+		x1 = x1 + incx * count * xo[dir];
+		y1 = y1 + incy * count * yo[dir];
+		greeble_area(heightmap, dim, x1, y1, x2, y2, limit);
+	}
 }
 
 static void populate_greebles(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2, int limit)
