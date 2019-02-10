@@ -468,7 +468,7 @@ static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int 
 		}
 		x = min(x1, x2);
 		x += dx / 2;
-		x += rand() % (dx / 3) - (dx / 6);
+		x += rand() % (dx / 2) - (dx / 4);
 		y = min(y1, y2);
 		y += dy / 2;
 		dir = 1;
@@ -484,7 +484,7 @@ static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int 
 		x += dx / 2;
 		y = min(y1, y2);
 		y += dy / 2;
-		y += rand() % (dy / 3) - (dy / 6);
+		y += rand() % (dy / 2) - (dy / 4);
 		dir = 0;
 		add_groove(heightmap, dim, x, y, dx, dir, 1);
 		greeble_area(heightmap, dim, x1, y1, x2, y, limit);
