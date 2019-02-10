@@ -252,6 +252,7 @@ static void add_random_grooves(unsigned char *heightmap, int dim, int count)
 		add_random_groove(heightmap, dim);
 }
 
+static void greeble_area(unsigned char *heightmap, int dim, int x1, int y1, int x2, int y2, int limit);
 static void add_rectangle(unsigned char *heightmap, int dim, int x, int y, int width, int height, int in_or_out)
 {
 	int i, j;
@@ -261,6 +262,11 @@ static void add_rectangle(unsigned char *heightmap, int dim, int x, int y, int w
 	hix = x + width / 2;
 	loy = y - height / 2;
 	hiy = y + height / 2;
+
+	if ((rand() % 5) == 0) {
+		greeble_area(heightmap, dim, lox, loy, hix, hiy, 32);
+		return;
+	}
 
 	for (i = lox + 1; i < hix - 1; i++) {
 		for (j = loy + 1; j < hiy - 1; j++) {
