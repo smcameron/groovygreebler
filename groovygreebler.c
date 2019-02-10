@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include "quat.h"
 #include "png_utils.h"
@@ -544,6 +545,10 @@ int main(int argc, char *argv[])
 {
 	unsigned char *heightmap, *hmap_img, *normal_img;
 	union vec3 *normalmap;
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	srand(tv.tv_usec);
 
 	heightmap = allocate_heightmap(DIM);
 	normalmap = allocate_normalmap(DIM);
