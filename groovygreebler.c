@@ -217,8 +217,8 @@ static void add_groove(unsigned char *heightmap, int dim, int x, int y, int len,
 {
 	int i;
 
-	x = x - len / 2;
-	y = y - len / 2;
+	x -= (len / 2) * xo[dir];
+	y -= (len / 2) * yo[dir];
 	for (i = 0; i < len; i++) {
 		set_height(heightmap, x, y, in_or_out * 10, dim);
 		set_height(heightmap, x + yo[dir], y + xo[dir], in_or_out * 5, dim);
