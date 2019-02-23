@@ -29,7 +29,8 @@
 #include "png_utils.h"
 #include "bline.h"
 
-#define DIM 1024
+#define DIM 4096
+#define LIMIT 32
 
 #define LINE 0
 #define RECTANGLE 1
@@ -635,7 +636,7 @@ int main(int argc, char *argv[])
 	// add_random_circles(heightmap, DIM, 0);
 	//add_random_rows(heightmap, DIM, 150, 32);
 
-	greeble_area(heightmap, DIM, 0, 0, DIM - 1 , DIM - 1, 32);
+	greeble_area(heightmap, DIM, 0, 0, DIM - 1 , DIM - 1, LIMIT);
 
 	calculate_normalmap(heightmap, normalmap, DIM);
 
